@@ -2,7 +2,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const postsContainer = document.getElementById("posts");
   const tagControls = document.getElementById("tag-controls");
   const allTags = [...new Set(posts.flatMap(post => post.tags || []))];
-  let activeTag = "All";
+  const snippetLength = 200;
+  let activeTags = new Set(["All"]);
+  let expandedCard = null;
 
   function createCard(post) {
     const card = document.createElement("article");
@@ -21,26 +23,43 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     const snippet = document.createElement("p");
-    snippet.textContent = post.content.substring(0, 50) + "..."; // auto snippet
+    snippet.className = "post-snippet";
+    snippet.textContent = post.content.length > snippetLength
+      ? `${post.content.substring(0, snippetLength)}...`
+      : post.content;
 
     const fullContent = document.createElement("p");
+    fullContent.className = "post-full-content";
     fullContent.textContent = post.content;
     fullContent.style.display = "none";
 
-    const img = document.createElement("img");
-    img.src = post.image;
-    img.alt = post.title;
+    let img;
+    if (post.image) {
+      img = document.createElement("img");
+      img.src = post.image;
+      img.alt = post.title;
+    }
 
     card.appendChild(title);
     card.appendChild(tagList);
     card.appendChild(snippet);
     card.appendChild(fullContent);
-    card.appendChild(img);
+    if (img) card.appendChild(img);
 
     card.addEventListener("click", () => {
-      const isExpanded = card.classList.toggle("full");
+      if (expandedCard && expandedCard !== card) {
+        expandedCard.classList.remove("full");
+        const prevFull = expandedCard.querySelector(".post-full-content");
+        const prevSnippet = expandedCard.querySelector(".post-snippet");
+        if (prevFull) prevFull.style.display = "none";
+        if (prevSnippet) prevSnippet.style.display = "block";
+      }
+
+      const isExpanded = !card.classList.contains("full");
+      card.classList.toggle("full", isExpanded);
       fullContent.style.display = isExpanded ? "block" : "none";
       snippet.style.display = isExpanded ? "none" : "block";
+      expandedCard = isExpanded ? card : null;
     });
 
     return card;
@@ -48,9 +67,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderPosts() {
     postsContainer.innerHTML = "";
-    const visiblePosts = activeTag === "All"
+    expandedCard = null;
+    const visiblePosts = activeTags.has("All")
       ? posts
-      : posts.filter(post => (post.tags || []).includes(activeTag));
+      : posts.filter(post => (post.tags || []).some(tag => activeTags.has(tag)));
 
     visiblePosts.forEach(post => {
       postsContainer.appendChild(createCard(post));
@@ -63,11 +83,24 @@ document.addEventListener("DOMContentLoaded", () => {
     tags.forEach(tag => {
       const button = document.createElement("button");
       button.className = "filter-chip";
-      if (tag === activeTag) button.classList.add("active");
+      if (activeTags.has(tag)) button.classList.add("active");
       button.type = "button";
       button.textContent = tag;
       button.addEventListener("click", () => {
-        activeTag = tag;
+        if (tag === "All") {
+          activeTags = new Set(["All"]);
+        } else {
+          if (activeTags.has("All")) activeTags.delete("All");
+
+          if (activeTags.has(tag)) {
+            activeTags.delete(tag);
+          } else {
+            activeTags.add(tag);
+          }
+
+          if (activeTags.size === 0) activeTags.add("All");
+        }
+
         renderTagButtons();
         renderPosts();
       });
