@@ -72,6 +72,8 @@ body::before {
 }
 
 .nav-links a {
+  display: inline-flex;
+  align-items: center;
   color: #f7ebd8;
   text-decoration: none;
   font-weight: 700;
@@ -83,6 +85,26 @@ body::before {
 }
 
 .nav-links a:hover {
+  background: rgba(255, 235, 208, 0.22);
+  transform: translateY(-1px);
+}
+
+.admin-toggle {
+  display: inline-flex;
+  align-items: center;
+  color: #f7ebd8;
+  text-decoration: none;
+  font-weight: 700;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 235, 208, 0.25);
+  background: rgba(255, 235, 208, 0.08);
+  transition: background 0.2s ease, transform 0.2s ease;
+  cursor: pointer;
+  font-family: "Nunito Sans", sans-serif;
+}
+
+.admin-toggle:hover {
   background: rgba(255, 235, 208, 0.22);
   transform: translateY(-1px);
 }
@@ -115,6 +137,142 @@ header h1 {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.admin-panel {
+  max-width: 1100px;
+  margin: 0 auto 22px;
+  border-radius: 18px;
+  border: 1px solid rgba(122, 82, 49, 0.28);
+  background: linear-gradient(180deg, rgba(255, 250, 242, 0.98), rgba(245, 231, 211, 0.95));
+  box-shadow: 0 16px 30px rgba(72, 45, 26, 0.2);
+  padding: 16px;
+}
+
+.admin-panel[hidden] {
+  display: none;
+}
+
+.admin-header h2 {
+  margin: 0 0 8px;
+  font-family: "Cinzel", Georgia, "Times New Roman", serif;
+  color: var(--wood-800);
+}
+
+.admin-header p {
+  margin: 0 0 12px;
+  color: var(--text-secondary);
+}
+
+.admin-fields {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.admin-fields label {
+  font-weight: 700;
+  color: var(--wood-800);
+}
+
+.admin-fields input,
+.admin-fields select {
+  width: 100%;
+  border: 1px solid rgba(122, 82, 49, 0.28);
+  border-radius: 10px;
+  padding: 10px;
+  background: rgba(255, 250, 242, 0.94);
+  color: var(--text-primary);
+  font-family: "Nunito Sans", sans-serif;
+}
+
+.editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.editor-toolbar button,
+.editor-toolbar select,
+.editor-toolbar input[type="color"] {
+  border: 1px solid rgba(122, 82, 49, 0.28);
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: rgba(255, 250, 242, 0.94);
+  color: var(--text-primary);
+  font-family: "Nunito Sans", sans-serif;
+}
+
+.editor-toolbar button {
+  cursor: pointer;
+  min-width: 40px;
+}
+
+.post-editor {
+  min-height: 180px;
+  border-radius: 12px;
+  border: 1px solid rgba(122, 82, 49, 0.28);
+  background: rgba(255, 250, 242, 0.96);
+  padding: 12px;
+  color: var(--text-primary);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.post-editor:focus {
+  outline: 2px solid rgba(122, 82, 49, 0.34);
+}
+
+.image-tools {
+  margin-bottom: 12px;
+}
+
+.image-tools label {
+  display: inline-block;
+  margin-bottom: 6px;
+  font-weight: 700;
+  color: var(--wood-800);
+}
+
+.image-tools p {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+}
+
+.image-preview {
+  display: block;
+  width: 100%;
+  max-width: 380px;
+  margin-top: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(122, 82, 49, 0.25);
+}
+
+.image-preview[hidden] {
+  display: none;
+}
+
+.admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.admin-actions button {
+  border: 1px solid rgba(122, 82, 49, 0.3);
+  border-radius: 999px;
+  padding: 9px 14px;
+  background: rgba(255, 250, 242, 0.95);
+  color: var(--wood-800);
+  font-family: "Nunito Sans", sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-actions button:hover {
+  background: rgba(185, 137, 85, 0.2);
 }
 
 .page-panel {
@@ -238,8 +396,34 @@ header h1 {
   color: var(--text-secondary);
 }
 
+.post-snippet {
+  max-height: 180px;
+  opacity: 1;
+  overflow: hidden;
+  transition: max-height 0.35s ease, opacity 0.25s ease, margin 0.35s ease;
+}
+
 .post-full-content {
   white-space: pre-line;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  margin: 0;
+  color: var(--text-secondary);
+  transition: max-height 0.4s ease, opacity 0.3s ease, margin 0.4s ease;
+}
+
+.post-card.full .post-snippet {
+  max-height: 0;
+  opacity: 0;
+  margin: 0;
+}
+
+.post-card.full .post-full-content {
+  max-height: 900px;
+  opacity: 1;
+  margin: 0 0 14px 0;
+  color: var(--text-primary);
 }
 
 .post-card img {
@@ -275,6 +459,11 @@ header h1 {
   }
 
   .nav-links a {
+    padding: 7px 10px;
+    font-size: 0.9rem;
+  }
+
+  .admin-toggle {
     padding: 7px 10px;
     font-size: 0.9rem;
   }

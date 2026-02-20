@@ -1,28 +1,46 @@
 # Personal Blog Website
 
-This repository contains the source code for my personal blog, built using HTML, CSS, and JavaScript. The site is designed to be lightweight, responsive, and easy to maintain while showcasing posts, projects, and ideas in a clean, modern layout.
+This repository contains the source code for a personal blog built with HTML, CSS, and JavaScript.
 
 ## Features
 
-- Responsive design for desktop and mobile  
-- Organized structure for blog posts  
-- Fast, static site performance  
-- Easy customization and expansion  
+- Responsive layout
+- Filterable blog posts
+- Built-in admin editor
+- Rich-text formatting (bold, italic, underline, font, size, color)
+- Image upload/paste support for posts
+- Saves directly to `js/posts.js`
 
 ## Project Structure
 
-/assets → images, styles, scripts  
-/posts → blog content  
-index.html → main entry page  
+- `assets/` -> images and uploads
+- `css/` -> styles
+- `js/` -> client scripts and `posts.js`
+- `pages/` -> additional pages
+- `server.js` -> local API for editing/saving posts
 
 ## Getting Started
 
-1. Clone the repository  
-2. Open `index.html` in your browser  
-3. View the Blog!  
+1. Clone the repository.
+2. Run `npm start`.
+3. Open `http://127.0.0.1:3000`.
 
-No build tools or dependencies are required.
+## Admin Editor
 
-## Goals
+1. Click `Admin` in the top bar.
+2. Add or edit posts from the built-in editor.
+3. Save changes (written to `js/posts.js`).
 
-This project serves as a personal space to share learning, experiments, and creative work while practicing front-end development and site organization.
+## GitHub Pages (Free Hosting)
+
+1. Push this repo to GitHub (branch `main`).
+2. In GitHub: `Settings` -> `Pages`.
+3. Under `Build and deployment`, set `Source` to `GitHub Actions`.
+4. Push any commit to `main` to trigger deploy.
+5. Your site will be available at:
+   - `https://<your-username>.github.io/<repo-name>/`
+
+Notes:
+- The workflow file is: `.github/workflows/pages.yml`.
+- The Admin editor is intentionally hidden on hosted Pages.
+- Saving to `js/posts.js` requires local server mode (`npm start`), because GitHub Pages is static-only.
