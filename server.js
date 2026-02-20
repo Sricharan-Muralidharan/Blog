@@ -74,6 +74,113 @@ function fileExtensionFromMime(mimeType) {
   return null;
 }
 
+function slugifyTitle(title) {
+  return String(title || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60) || "post";
+}
+
+async function ensureUniqueFilePath(basePath) {
+  const ext = path.extname(basePath);
+  const noExt = basePath.slice(0, -ext.length);
+  let candidate = basePath;
+  let counter = 2;
+  while (true) {
+    try {
+      await fsp.access(candidate);
+      candidate = `${noExt}-${counter}${ext}`;
+      counter += 1;
+    } catch {
+      return candidate;
+    }
+  }
+}
+
+async function renamePostUploads(post) {
+  const imageList = Array.isArray(post.images)
+    ? post.images.map((src) => String(src || "").trim()).filter(Boolean)
+    : [];
+
+  const sources = imageList.length > 0
+    ? imageList
+    : (post.image ? [String(post.image).trim()] : []);
+
+  if (sources.length === 0) return post;
+
+  const slug = slugifyTitle(post.title);
+  const renamedImages = [];
+
+  for (let i = 0; i < sources.length; i += 1) {
+    const source = sources[i];
+    if (!source.startsWith("assets/uploads/")) {
+      renamedImages.push(source);
+      continue;
+    }
+
+    const sourceName = source.slice("assets/uploads/".length);
+    const sourcePath = path.join(UPLOAD_DIR, sourceName);
+    const ext = path.extname(sourceName) || ".png";
+    const desiredName = `${slug}-image-${i + 1}${ext}`;
+    const desiredPath = await ensureUniqueFilePath(path.join(UPLOAD_DIR, desiredName));
+
+    try {
+      await fsp.copyFile(sourcePath, desiredPath);
+      renamedImages.push(`assets/uploads/${path.basename(desiredPath)}`);
+    } catch {
+      renamedImages.push(source);
+    }
+  }
+
+  return {
+    ...post,
+    images: renamedImages,
+    image: renamedImages[0] || post.image || "",
+  };
+}
+
+function collectReferencedUploadFiles(posts) {
+  const refs = new Set();
+  const uploadPrefix = "assets/uploads/";
+  const uploadPattern = /assets\/uploads\/([A-Za-z0-9._-]+)/g;
+
+  posts.forEach((post) => {
+    const sources = [];
+    if (post.image) sources.push(String(post.image));
+    if (Array.isArray(post.images)) {
+      post.images.forEach((src) => sources.push(String(src || "")));
+    }
+    if (post.contentHtml) sources.push(String(post.contentHtml));
+    if (post.content) sources.push(String(post.content));
+
+    sources.forEach((value) => {
+      if (!value) return;
+      if (value.startsWith(uploadPrefix)) {
+        refs.add(value.slice(uploadPrefix.length));
+      }
+      let match;
+      while ((match = uploadPattern.exec(value)) !== null) {
+        refs.add(match[1]);
+      }
+      uploadPattern.lastIndex = 0;
+    });
+  });
+
+  return refs;
+}
+
+async function cleanupUnusedUploads(posts) {
+  await fsp.mkdir(UPLOAD_DIR, { recursive: true });
+  const files = await fsp.readdir(UPLOAD_DIR, { withFileTypes: true });
+  const referencedFiles = collectReferencedUploadFiles(posts);
+  const deletions = files
+    .filter((entry) => entry.isFile() && !referencedFiles.has(entry.name))
+    .map((entry) => fsp.unlink(path.join(UPLOAD_DIR, entry.name)));
+  await Promise.all(deletions);
+}
+
 async function handleApi(req, res) {
   if (req.method === "OPTIONS") {
     res.writeHead(204, {
@@ -138,15 +245,24 @@ async function handleApi(req, res) {
         return sendJson(res, 400, { ok: false, error: "Missing post payload" });
       }
 
-      const normalizedPost = {
+      let normalizedPost = {
         title: String(post.title || "").trim(),
         contentHtml: String(post.contentHtml || "").trim(),
         content: String(post.content || "").trim(),
         image: String(post.image || "").trim(),
+        images: Array.isArray(post.images)
+          ? [...new Set(post.images.map((src) => String(src || "").trim()).filter(Boolean))]
+          : [],
         tags: Array.isArray(post.tags)
           ? post.tags.map((tag) => String(tag).trim()).filter(Boolean)
           : [],
       };
+
+      if (!normalizedPost.image && normalizedPost.images.length > 0) {
+        normalizedPost.image = normalizedPost.images[0];
+      }
+
+      normalizedPost = await renamePostUploads(normalizedPost);
 
       if (!normalizedPost.title || (!normalizedPost.content && !normalizedPost.contentHtml)) {
         return sendJson(res, 400, { ok: false, error: "Title and content are required" });
@@ -160,6 +276,28 @@ async function handleApi(req, res) {
       }
 
       savePostsToJs(posts);
+      await cleanupUnusedUploads(posts);
+      return sendJson(res, 200, { ok: true, posts });
+    } catch (error) {
+      return sendJson(res, 500, { ok: false, error: error.message });
+    }
+  }
+
+  if (req.method === "POST" && req.url === "/api/delete-post") {
+    try {
+      const { index } = await readBody(req);
+      if (!Number.isInteger(index)) {
+        return sendJson(res, 400, { ok: false, error: "Invalid post index" });
+      }
+
+      const posts = loadPostsFromJs();
+      if (index < 0 || index >= posts.length) {
+        return sendJson(res, 400, { ok: false, error: "Post index out of range" });
+      }
+
+      posts.splice(index, 1);
+      savePostsToJs(posts);
+      await cleanupUnusedUploads(posts);
       return sendJson(res, 200, { ok: true, posts });
     } catch (error) {
       return sendJson(res, 500, { ok: false, error: error.message });

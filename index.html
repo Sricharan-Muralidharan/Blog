@@ -42,8 +42,14 @@
         <label for="post-title-input">Title</label>
         <input id="post-title-input" type="text" placeholder="Post title">
 
-        <label for="post-tags-input">Tags (comma separated)</label>
-        <input id="post-tags-input" type="text" placeholder="Smart Chess Board, Arduino">
+        <label for="tag-select">Tags</label>
+        <div class="tag-picker">
+          <select id="tag-select">
+            <option value="">Select a tag</option>
+          </select>
+          <button id="add-tag-btn" type="button">Add Tag</button>
+        </div>
+        <div id="selected-tags" class="selected-tags"></div>
       </div>
 
       <div class="editor-toolbar">
@@ -75,15 +81,16 @@
       <div id="post-editor" class="post-editor" contenteditable="true"></div>
 
       <div class="image-tools">
-        <label for="post-image-file">Upload Image</label>
-        <input id="post-image-file" type="file" accept="image/png,image/jpeg,image/gif,image/webp">
-        <p>Tip: You can also paste an image with <code>Ctrl+V</code> while this panel is open.</p>
-        <img id="image-preview" class="image-preview" alt="Selected post image preview">
+        <label for="post-image-file">Upload Images</label>
+        <input id="post-image-file" type="file" accept="image/png,image/jpeg,image/gif,image/webp" multiple>
+        <p>Tip: You can also paste images with <code>Ctrl+V</code> while this panel is open.</p>
+        <div id="image-preview-list" class="image-preview-list"></div>
       </div>
 
       <div class="admin-actions">
         <button id="save-post-btn" type="button">Save Post</button>
         <button id="clear-editor-btn" type="button">Clear</button>
+        <button id="delete-post-btn" type="button" class="danger-btn" disabled>Delete Post</button>
       </div>
     </section>
 
